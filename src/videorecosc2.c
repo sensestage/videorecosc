@@ -62,8 +62,6 @@ char frametimestring [255];
 //CvPoint *track_points;
 
 void error(int num, const char *m, const char *path);
-int info_handler(const char *path, const char *types, lo_arg **argv,
-		    int argc, void *data, void *user_data);
 int record_handler(const char *path, const char *types, lo_arg **argv,
 		    int argc, void *data, void *user_data);
 int generic_handler(const char *path, const char *types, lo_arg **argv,
@@ -83,6 +81,7 @@ CvSize camSize;
 void createNewWriter(){
 	sprintf( filename, "%s_%i.avi", basefilename, filecounter );
 	filecounter++;
+	frame = 0;
 	writer = cvCreateVideoWriter(
 		filename,
 	 	CV_FOURCC('M','J','P','G'),
@@ -90,6 +89,23 @@ void createNewWriter(){
 	 	camSize,
 		1
 	);
+}
+
+int set_recording( int rec )
+{
+	recording = rec;
+	if ( recording ){
+		if ( writer ){
+			lo_send_from( t, s, LO_TT_IMMEDIATE, "/videorec/record/stop", "s", filename );
+			cvReleaseVideoWriter( &writer );
+		}
+		createNewWriter();
+		lo_send_from( t, s, LO_TT_IMMEDIATE, "/videorec/record/start", "s", filename );
+	} else {
+		lo_send_from( t, s, LO_TT_IMMEDIATE, "/videorec/record/stop", "s", filename );
+		cvReleaseVideoWriter( &writer );
+	}
+   return recording;
 }
 
 
@@ -153,8 +169,6 @@ int main(int argc, char** argv)
 
     lo_server_thread st = lo_server_thread_new(port, error);
 
-    lo_server_thread_add_method(st, "/videorec/info", "", info_handler, NULL);
-
     lo_server_thread_add_method(st, "/videorec/record", "i", record_handler, NULL);
 
     lo_server_thread_add_method(st, "/videorec/quit", "", quit_handler, NULL);
@@ -163,7 +177,6 @@ int main(int argc, char** argv)
     lo_server_thread_start(st);
  
     lo_server s = lo_server_thread_get_server( st );
-
 
     lo_send_from( t, s, LO_TT_IMMEDIATE, "/videorec/started", "" );
 
@@ -199,9 +212,9 @@ int main(int argc, char** argv)
 			cvPutText( image, frametimestring, text_pos, &font, CV_RGB(255,255,0));
 			cvShowImage( "CameraImage", image );
 	      if ( writer && recording ){
-				frame++;
 			 	cvWriteFrame( writer, image );
-				lo_send_from( t, s, LO_TT_IMMEDIATE, "/videorec/frame", "si", filename, frame );
+				lo_send_from( t, s, LO_TT_IMMEDIATE, "/videorec/frame", "i", frame );
+				frame++;
 			}
 		}
 	   int c = cvWaitKey(40);
@@ -209,8 +222,8 @@ int main(int argc, char** argv)
 			case '\x1b':
 				printf("Exiting ...\n");
 				goto exit_main;
-			case 'p':
-				paused = !paused;
+			case 'r':
+				set_recording( !recording );
 				break;
 			}
       }
@@ -239,15 +252,7 @@ void error(int num, const char *msg, const char *path)
 int record_handler(const char *path, const char *types, lo_arg **argv, int argc,
 		 void *data, void *user_data)
 {
-   recording = argv[0]->i;
-	if ( recording ){
-		if ( writer ){
-			cvReleaseVideoWriter( &writer );
-		}
-		createNewWriter();	
-	} else {
-		cvReleaseVideoWriter( &writer );
-	}
+   set_recording( argv[0]->i );
    return 0;
 }
 
