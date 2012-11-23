@@ -54,7 +54,7 @@ link_directories(
 ##########################################################################
 
 set(videorecosc_SRCS
-  src/videorecosc2.c
+  src/videorecosc.c
 )
 
 add_executable( videorecosc ${videorecosc_SRCS} )
