@@ -1,0 +1,94 @@
+===================  VideoRecOSC  ==================
+=========== (c) 2012 - Marije Baalman ==============
+================== www.nescivi.eu ==================
+
+VideoRecOSC is a small program that records video from
+either a camera image or a video file, and is controlled
+via OSC. Updates of the frame counts and current filename
+are sent out via OSC.
+This tool was created in order to be able to synchronise
+video and sensor data recording.
+
+The program is based on the libraries
+OpenCV - http://opencv.willowgarage.com
+liblo  - http://liblo.sourceforge.net
+
+================== Build ================
+
+To build the application you need scons.
+
+You build it by doing:
+
+$ mkdir build
+$ cmake ..
+$ make
+$ sudo make install
+
+================== Startup ================
+
+videorecosc <device or file> <outputfilename> <target_port> <recv_port> <target_ip>
+
+The defaults are:
+
+device 0
+outputfilename "test"
+target_port 57120 (to send to)
+recv_port   57151 (to listen on)
+target_ip   "127.0.0.1"
+
+Devices are indicated using a single digit number
+Videofiles are indicated by their pathname
+
+================= HOT KEYS ================
+ESC - quit
+r   - start/stop recording
+=================== OSC ===================
+
+OSC messages it understands:
+
+    /videorec/record  -i- start/stop recording
+    /videorec/quit   -- quit application
+
+OSC messages it sends:
+    All the parameter messages (as confirmation of setting and in reply to info)
+
+	/videorec/started     --    application has started
+
+	/videorec/frame 			-i- 		- frame number
+	/videorec/record/start 	-s- 	   - filename
+	/videorec/record/stop  	-s- 	   - filename	
+
+   /motiontrackosc/quit     -s-    application has quit
+
+=========== SuperCollider ========
+
+VideoRecOSC is distributed with an example file for SuperCollider.
+
+============ ChangeLog ===========
+
+23/11/2012 - v0.1 - first release
+
+============ Acknowledgement ==============
+
+This software was created while working on the Juggling Ball project for STEIM, Amsterdam (http://www.steim.org).
+
+============ License ==============
+
+This software is published under the GNU/General Public License, version 3. This license is included in the file COPYING.
+Documentation is published under a Creative Commons Attribution-Share Alike 3.0 Unported License, see http://creativecommons.org/licenses/by-sa/3.0/
+
+============ Notes =================
+
+[1] From Jochen Otto, Sept. 19, 2009
+
+The changes in OS X 10.6 basically broke OpenCV's Quicktime/Carbon GUI  
+functionality.
+
+There is a workaround which allows building OpenCV on 64bit  
+architecture, however, without any QT/Carbon support.
+
+See here on the issue:
+http://trac.macports.org/ticket/21014
+http://tech.groups.yahoo.com/group/OpenCV/message/65895
+
+A ticket is filed at OpenCV on Sourceforge, too: http://sourceforge.net/tracker/?func=detail&aid=2859071&group_id=22870&atid=376677
