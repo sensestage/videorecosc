@@ -15,7 +15,7 @@ liblo  - http://liblo.sourceforge.net
 
 ================== Build ================
 
-To build the application you need scons.
+To build the application you need cmake.
 
 You build it by doing:
 
