@@ -1,6 +1,6 @@
-/* $Id: videorecosc.c 54 2009-02-06 14:54:20Z nescivi $ 
+/* $Id: videoplayosc.c 54 2009-02-06 14:54:20Z nescivi $ 
  *
- * Copyright (C) 2012, Marije Baalman <nescivi _at_ gmail.com>
+ * Copyright (C) 2013, Marije Baalman <nescivi _at_ gmail.com>
  *
  * based on examples for
  * motempl.c from samples/c from the openCV library
@@ -46,7 +46,7 @@
 int done = 0;
 int paused = 0;
 int recording = 0;
-int frame = 0;
+int current_frame = 0;
 
 lo_address t;
 lo_server s;
@@ -62,7 +62,7 @@ char frametimestring [255];
 //CvPoint *track_points;
 
 void error(int num, const char *m, const char *path);
-int record_handler(const char *path, const char *types, lo_arg **argv,
+int frame_handler(const char *path, const char *types, lo_arg **argv,
 		    int argc, void *data, void *user_data);
 int generic_handler(const char *path, const char *types, lo_arg **argv,
 		    int argc, void *data, void *user_data);
@@ -70,15 +70,19 @@ int quit_handler(const char *path, const char *types, lo_arg **argv, int argc,
 		 void *data, void *user_data);
 
 
-char filename[255];
-char *basefilename;
-int filecounter = 0;
+// char filename[255];
+char *filename;
+// int filecounter = 0;
 double fps;
 
-CvVideoWriter *writer;
+//CvVideoWriter *writer;
 CvSize camSize;
 
-void createNewWriter(){
+CvCapture* capture = 0;
+
+
+/*
+void createNewPlayer(){
 	sprintf( filename, "%s_%i.avi", basefilename, filecounter );
 	filecounter++;
 	frame = 0;
@@ -107,7 +111,30 @@ int set_recording( int rec )
 	}
    return recording;
 }
+*/
 
+int showFrame( int frameid ){
+  if ( current_frame == frameid ){
+      return 0;
+  }
+  if ( (current_frame + 1) != frameid ){ // have to skip
+    cvSetCaptureProperty( capture, CV_CAP_PROP_POS_FRAMES, frameid );
+  }
+  IplImage* image;
+  image = cvQueryFrame( capture );
+  if( image ){
+//       sprintf( frametimestring, "frame: %i", frame);
+//       cvInitFont( &font, CV_FONT_HERSHEY_COMPLEX, 1, 1, 0.0, 1, line_type );
+//       text_pos = cvPoint( 10, image->height-80 );
+//       cvPutText( image, filename, text_pos, &font, CV_RGB(255,255,0));
+//       text_pos = cvPoint( 10, image->height-50 );
+//       cvPutText( image, frametimestring, text_pos, &font, CV_RGB(255,255,0));
+    cvShowImage( "CameraImage", image );
+    current_frame = frameid;
+    return 0;
+  }
+  return -1;
+}
 
 int main(int argc, char** argv)
 {
@@ -117,47 +144,41 @@ int main(int argc, char** argv)
     char *ip = "127.0.0.1";
 
     char *input = "0";
-	 basefilename = "test";
+//     filename = "test";
 
     IplImage* motion = 0;
-    CvCapture* capture = 0;
 
     printf("argv: %s %s %s %s %s %s %i\n", argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argc );
 
-    if ( argc == 1 || (argc >= 2 && strlen(argv[1]) == 1 && isdigit(argv[1][0])) ) {
-       capture = cvCaptureFromCAM( argc >= 2 ? argv[1][0] - '0' : 0 );
-    } else if( argc >= 2 ) {
-      capture = cvCaptureFromFile( argv[1] );
-      input = argv[1];
-    }
-    basefilename = argv[2];
-
-	if ( argc == 6 )
-		{
-		ip = argv[5];
-		port = argv[4];
-		outport = argv[3];
-		}
-	else if ( argc == 5 )
-		{
-		port = argv[4];
-		outport = argv[3];
-		}
-	else if ( argc == 4 )
-		{
-		outport = argv[3];
-		}
+    filename = argv[1];
+    
+    capture = cvCaptureFromFile( filename );
+    
+    if ( argc == 5 )
+	    {
+	    ip = argv[4];
+	    port = argv[3];
+	    outport = argv[2];
+	    }
+    else if ( argc == 4 )
+	    {
+	    port = argv[3];
+	    outport = argv[2];
+	    }
+    else if ( argc == 3 )
+	    {
+	    outport = argv[2];
+	    }
 
     printf("============================================================================\n");
-    printf("videorecosc - v0.1 - sends out osc data based on video recording\n");
-    printf("                     (c) 2012, Marije Baalman\n");
+    printf("videoplayosc - v0.1 - sends out osc data based on video recording\n");
+    printf("                     (c) 2013, Marije Baalman\n");
     printf("                http://www.nescivi.nl/videorecosc\n");
     printf("Written using OpenVC and liblo\n");
     printf("This is free software released under the GNU/General Public License\n");
-    printf("start with \"videorecosc <file or device> <outputfilename> <target_port> <recv_port> <target_ip>\" \n");
+    printf("start with \"videoplayosc <file> <target_port> <recv_port> <target_ip>\" \n");
     printf("============================================================================\n\n");
-    printf("video input from: %s\n", input );
-    printf("video output to: %s\n", filename );
+    printf("video input from: %s\n", filename );
     printf("Listening to port: %s\n", port );
     printf("Sending to ip and port: %s %s\n", ip, outport );
     fflush(stdout);
@@ -169,16 +190,16 @@ int main(int argc, char** argv)
 
     lo_server_thread st = lo_server_thread_new(port, error);
 
-    lo_server_thread_add_method(st, "/videorec/record", "i", record_handler, NULL);
+    lo_server_thread_add_method(st, "/videoplay/frame", "i", frame_handler, NULL);
 
-    lo_server_thread_add_method(st, "/videorec/quit", "", quit_handler, NULL);
+    lo_server_thread_add_method(st, "/videoplay/quit", "", quit_handler, NULL);
     lo_server_thread_add_method(st, NULL, NULL, generic_handler, NULL);
 
     lo_server_thread_start(st);
  
     lo_server s = lo_server_thread_get_server( st );
 
-    lo_send_from( t, s, LO_TT_IMMEDIATE, "/videorec/started", "" );
+    lo_send_from( t, s, LO_TT_IMMEDIATE, "/videoplay/started", "" );
 
     if( capture )
     {
@@ -190,9 +211,11 @@ int main(int argc, char** argv)
 	);
 	printf( "capturing at framerate %f\n", fps );
 	if ( fps == -1 ){ fps = 25; }
+	lo_send_from( t, s, LO_TT_IMMEDIATE, "/videoplay/fps", "f", fps );
 
-	cvNamedWindow( "CameraImage", 1 );
+	cvNamedWindow( "VideoImage", 1 );
 
+	// get first image:
 	IplImage* image1;
 	image1 = cvQueryFrame( capture );
 	if( image1 ){
@@ -200,40 +223,20 @@ int main(int argc, char** argv)
 	}
         
 	while( !done ){
-		      IplImage* image;
-	    image = cvQueryFrame( capture );
-	    if( image ){
-	      //cvShowImage( "CameraImage", image );
-	      sprintf( frametimestring, "frame: %i", frame);
-	      cvInitFont( &font, CV_FONT_HERSHEY_COMPLEX, 1, 1, 0.0, 1, line_type );
-	      text_pos = cvPoint( 10, image->height-80 );
-	      cvPutText( image, filename, text_pos, &font, CV_RGB(255,255,0));
-	      text_pos = cvPoint( 10, image->height-50 );
-	      cvPutText( image, frametimestring, text_pos, &font, CV_RGB(255,255,0));
-	      cvShowImage( "CameraImage", image );
-	      if ( writer && recording ){
-		      cvWriteFrame( writer, image );
-		      lo_send_from( t, s, LO_TT_IMMEDIATE, "/videorec/frame", "i", frame );
-		      frame++;
-		}
-	      }
 	      int c = cvWaitKey(40);
 	      switch( (char) c ){
 		      case '\x1b':
 			      printf("Exiting ...\n");
 			      goto exit_main;
-		      case 'r':
-			      set_recording( !recording );
-			      break;
 		      }
 	}
 	exit_main:
 	  cvReleaseCapture( &capture );
-	  cvReleaseVideoWriter( &writer );
+// 	  cvReleaseVideoWriter( &writer );
 	  cvDestroyWindow( "CameraImage" );
    }
 
-   lo_send_from( t, s, LO_TT_IMMEDIATE, "/videorec/quit", "s", "nothing more to do, quitting" );
+   lo_send_from( t, s, LO_TT_IMMEDIATE, "/videoplay/quit", "s", "nothing more to do, quitting" );
    lo_server_thread_free( st );
    lo_address_free( t );
 
@@ -247,10 +250,10 @@ void error(int num, const char *msg, const char *path)
 }
 
 
-int record_handler(const char *path, const char *types, lo_arg **argv, int argc,
+int frame_handler(const char *path, const char *types, lo_arg **argv, int argc,
 		 void *data, void *user_data)
 {
-   set_recording( argv[0]->i );
+   showFrame( argv[0]->i );
    return 0;
 }
 
@@ -277,7 +280,7 @@ int quit_handler(const char *path, const char *types, lo_arg **argv, int argc,
 		 void *data, void *user_data)
 {
     done = 1;
-    printf("videorecosc: allright, that's it, I quit\n");
+    printf("videoplayosc: allright, that's it, I quit\n");
     fflush(stdout);
 
     return 0;
@@ -285,5 +288,5 @@ int quit_handler(const char *path, const char *types, lo_arg **argv, int argc,
 
                                 
 #ifdef _EiC
-main(1,"videorecosc2.c");
+main(1,"videoplayosc2.c");
 #endif

@@ -63,6 +63,16 @@ target_link_libraries(videorecosc ${liblo_LIBRARIES} ${opencv_LIBRARIES} )
 
 install(TARGETS videorecosc DESTINATION bin)
 
+set(videoplayosc_SRCS
+  src/videoplayosc.c
+)
+
+add_executable( videoplayosc ${videoplayosc_SRCS} )
+
+target_link_libraries(videoplayosc ${liblo_LIBRARIES} ${opencv_LIBRARIES} )
+
+install(TARGETS videoplayosc DESTINATION bin)
+
 #configure_file(${CMAKE_SOURCE_DIR}/src/flamwizard/flamwizard.desktop.in ${CMAKE_BINARY_DIR}/flamwizard.desktop)
 #install(FILES ${CMAKE_BINARY_DIR}/flamwizard.desktop DESTINATION share/applications)
 #install(FILES ${CMAKE_SOURCE_DIR}/resources/flamwizard.png DESTINATION share/icons/hicolor/32x32/apps)
@@ -95,17 +105,17 @@ if(DEFINED PACKAGE)
 
   set(CPACK_PACKAGE_NAME "videorecosc")
   set(CPACK_PACKAGE_VENDOR "Marije Baalman <sensestage@nescivi.nl")
-  set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "videorecosc - osc controllable video recorder")
-  set(CPACK_PACKAGE_DESCRIPTION "videorecosc - osc controllable video recorder")
+  set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "videorec/playosc - osc controllable video recorder and player")
+  set(CPACK_PACKAGE_DESCRIPTION "videorec/playosc - osc controllable video recorder and player")
   set(CPACK_PACKAGE_VERSION_MAJOR "${VERSION_MAJOR}")
   set(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR}")
   set(CPACK_PACKAGE_VERSION_PATCH "${VERSION_PATCH}")
-  set(CPACK_PACKAGE_INSTALL_DIRECTORY "videorecosc-${VERSION}")
+  set(CPACK_PACKAGE_INSTALL_DIRECTORY "videoosc-${VERSION}")
   set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/README")
   set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/COPYING")
   set(CPACK_STRIP_FILES TRUE)
   set(CPACK_TOPLEVEL_TAG "package")
-  set(CPACK_PACKAGE_FILE_NAME "videorecosc-${VERSION}")
+  set(CPACK_PACKAGE_FILE_NAME "videoosc-${VERSION}")
 
   if(PACKAGE STREQUAL "RPM")
     set(CPACK_GENERATOR "RPM")
@@ -114,7 +124,7 @@ if(DEFINED PACKAGE)
     endif(NOT DEFINED CPACK_RPM_PACKAGE_RELEASE)
     set(CPACK_RPM_PACKAGE_LICENSE "GPLv3+")
     set(CPACK_RPM_PACKAGE_REQUIRES "opencv, liblo")
-    set(CPACK_PACKAGE_FILE_NAME "videorecosc-${VERSION}-${CPACK_RPM_PACKAGE_RELEASE}")
+    set(CPACK_PACKAGE_FILE_NAME "videoosc-${VERSION}-${CPACK_RPM_PACKAGE_RELEASE}")
   endif(PACKAGE STREQUAL "RPM")
 
   if(PACKAGE STREQUAL "DEB")
@@ -126,7 +136,7 @@ if(DEFINED PACKAGE)
   endif(PACKAGE STREQUAL "DEB")
 
   set(CPACK_SOURCE_GENERATOR "TGZ")
-  set(CPACK_SOURCE_PACKAGE_FILE_NAME "videorecosc-${VERSION}" CACHE INTERNAL "tarball basename")
+  set(CPACK_SOURCE_PACKAGE_FILE_NAME "videoosc-${VERSION}" CACHE INTERNAL "tarball basename")
   set(CPACK_IGNORE_FILES "/\\\\.git/;CMakeLists.txt.user;/build/")
   set(CPACK_SOURCE_IGNORE_FILES ${CPACK_IGNORE_FILES})
 
