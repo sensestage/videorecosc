@@ -131,6 +131,9 @@ int main(int argc, char** argv)
       input = argv[1];
     }
     basefilename = argv[2];
+    
+// CvCapture *camera=cvCaptureFromFile("http://username:pass@cam_address/axis-cgi/mjpg/video.cgi?resolution=640x480&req_fps=30&.mjpg");
+// CvCapture *capture =    cvCreateFileCapture_FFMPEG("http://axis-cam/mjpg/video.mjpg?resolution=640x480&req_fps=10&.mjpg");  
 
 	if ( argc == 6 )
 		{
@@ -200,7 +203,7 @@ int main(int argc, char** argv)
 	}
         
 	while( !done ){
-		      IplImage* image;
+	    IplImage* image;
 	    image = cvQueryFrame( capture );
 	    if( image ){
 	      //cvShowImage( "CameraImage", image );
