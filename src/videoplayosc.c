@@ -46,7 +46,8 @@
 int done = 0;
 int paused = 0;
 int recording = 0;
-int current_frame = 0;
+int current_frame = -1;
+int frameid = 0;
 
 lo_address t;
 lo_server s;
@@ -79,7 +80,6 @@ double fps;
 CvSize camSize;
 
 CvCapture* capture = 0;
-
 
 /*
 void createNewPlayer(){
@@ -114,10 +114,13 @@ int set_recording( int rec )
 */
 
 int showFrame( int frameid ){
+ 
+  printf( "frame: %i", frameid );
   if ( current_frame == frameid ){
       return 0;
   }
   if ( (current_frame + 1) != frameid ){ // have to skip
+    printf( "-- skipping\n", frameid );
     cvSetCaptureProperty( capture, CV_CAP_PROP_POS_FRAMES, frameid );
   }
   IplImage* image;
@@ -139,7 +142,7 @@ int showFrame( int frameid ){
 int main(int argc, char** argv)
 {
 
-    char *port = "57151";
+    char *port = "57152";
     char *outport = "57120";
     char *ip = "127.0.0.1";
 
@@ -148,7 +151,7 @@ int main(int argc, char** argv)
 
     IplImage* motion = 0;
 
-    printf("argv: %s %s %s %s %s %s %i\n", argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argc );
+//     printf("argv: %s %s %s %s %s %s %i\n", argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argc );
 
     filename = argv[1];
     
@@ -213,22 +216,37 @@ int main(int argc, char** argv)
 	if ( fps == -1 ){ fps = 25; }
 	lo_send_from( t, s, LO_TT_IMMEDIATE, "/videoplay/fps", "f", fps );
 
-	cvNamedWindow( "VideoImage", 1 );
+	cvNamedWindow( "CameraImage", 1 );
 
 	// get first image:
-	IplImage* image1;
-	image1 = cvQueryFrame( capture );
-	if( image1 ){
-		camSize = cvSize( image1->width, image1->height );
-	}
-        
+// 	IplImage* image1;
+	IplImage* image;
+// 	image = cvQueryFrame( capture );
+// 	if( image ){
+// 		camSize = cvSize( image1->width, image1->height );
+// 		cvShowImage( "CameraImage", image1 );
+// 	}
+	    
 	while( !done ){
-	      int c = cvWaitKey(40);
-	      switch( (char) c ){
-		      case '\x1b':
-			      printf("Exiting ...\n");
-			      goto exit_main;
-		      }
+	    if ( current_frame != frameid ){ // don't change image
+	      if ( (current_frame + 1) != frameid ){ // have to skip
+		printf( "-- skipping %i %i\n", frameid, current_frame );
+		cvSetCaptureProperty( capture, CV_CAP_PROP_POS_FRAMES, frameid );
+		image = cvQueryFrame( capture );
+	      } else {
+		image = cvQueryFrame( capture );
+	      }
+	      if( image ){
+		cvShowImage( "CameraImage", image );
+		current_frame = frameid;
+	      }
+	    }
+	    int c = cvWaitKey(10);
+	    switch( (char) c ){
+		    case '\x1b':
+			    printf("Exiting ...\n");
+			    goto exit_main;
+	    }
 	}
 	exit_main:
 	  cvReleaseCapture( &capture );
@@ -253,7 +271,8 @@ void error(int num, const char *msg, const char *path)
 int frame_handler(const char *path, const char *types, lo_arg **argv, int argc,
 		 void *data, void *user_data)
 {
-   showFrame( argv[0]->i );
+  frameid = argv[0]->i;
+//    showFrame( argv[0]->i );
    return 0;
 }
 
