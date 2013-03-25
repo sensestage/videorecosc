@@ -12,4 +12,3 @@ Tdef( \player, { (1..100).scramble.do{ |i| n.sendMsg( "/videoplay/frame", i ); 0
 Tdef( \player ).play;
 
 n.sendMsg( "/videoplay/quit" );
-
