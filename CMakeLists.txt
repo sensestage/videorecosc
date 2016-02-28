@@ -59,7 +59,7 @@ set(videorecosc_SRCS
 
 add_executable( videorecosc ${videorecosc_SRCS} )
 
-target_link_libraries(videorecosc ${liblo_LIBRARIES} ${opencv_LIBRARIES} )
+target_link_libraries(videorecosc ${liblo_LIBRARIES} ${opencv_LIBRARIES} -lm)
 
 install(TARGETS videorecosc DESTINATION bin)
 
@@ -69,7 +69,7 @@ set(videoplayosc_SRCS
 
 add_executable( videoplayosc ${videoplayosc_SRCS} )
 
-target_link_libraries(videoplayosc ${liblo_LIBRARIES} ${opencv_LIBRARIES} )
+target_link_libraries(videoplayosc ${liblo_LIBRARIES} ${opencv_LIBRARIES} -lm)
 
 install(TARGETS videoplayosc DESTINATION bin)
 
